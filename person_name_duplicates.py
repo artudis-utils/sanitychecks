@@ -23,8 +23,6 @@ def check_names(filename):
         json_person = json.loads(line)
         person = Person(json_person["family_name"], json_person["given_name"], "https://carleton.artudis.com/ppl/{}/".format(json_person["__id__"])) 
         people.append(person)  
-        if person.familyname == "Smy":
-            click.echo("Got smy")
 
     csv_filename = "{}_{}.csv".format(os.path.splitext(filename.name)[0], 'potential_duplicates')
     with open(csv_filename, 'wb') as csvfile:
@@ -35,12 +33,9 @@ def check_names(filename):
             for person2 in people:
                 if person1.link != person2.link:
                     link_pair = tuple(sorted([person1.link, person2.link]))
-                    click.echo(link_pair)
                     if link_pair not in processed:
                         familyname_ratio = Levenshtein.ratio(person1.familyname, person2.familyname)
                         givenname_ratio = Levenshtein.ratio(person1.givenname, person2.givenname)
-                        click.echo(familyname_ratio)
-                        click.echo(givenname_ratio)
                         if familyname_ratio > 0.7 and givenname_ratio > 0.3:
                             click.echo("{}, {}, {} {}".format(person1, person2, familyname_ratio, givenname_ratio))
                             csvwriter.writerow([person1.familyname.encode('utf-8'), person1.givenname.encode('utf-8'), person1.link, 
