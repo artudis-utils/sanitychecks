@@ -8,6 +8,7 @@ import csv
 import os
 
 Person = collections.namedtuple('Person', 'familyname, givenname, link')
+PersonWithIdentifiers = collections.namedtuple('Person', 'familyname, givenname, link, identifiers')
 
 @click.command()
 @click.argument('filename', nargs=1, type=click.File('r'))
@@ -49,13 +50,17 @@ def check_people(filename):
                 if name_info['type'] == u"alternative":
                     without_name_variant.pop()
                     break
-      
-        with_duplicate_identifiers.append(person)
+
+        personwithidents = PersonWithIdentifiers(json_person["family_name"], 
+                                                 json_person["given_name"], 
+                                                 "https://carleton.artudis.com/ppl/{}/".format(json_person["__id__"]),
+                                                 str(json_person.get('identifier', ''))
+                                                 ) 
+             
         if json_person['identifier'] != []:
             c = collections.Counter([x['scheme'] for x in json_person['identifier']])
-            if all(count == 1 for count in c.itervalues()):
-                with_duplicate_identifiers.pop()
-            
+            if not all(count == 1 for count in c.itervalues()):
+                with_duplicate_identifiers.append(personwithidents)            
 
     click.echo("Number of people without work urls: {}".format(len(without_work_url)))
     save_to_csv(without_work_url, filename, "without_work_url")    
@@ -70,17 +75,23 @@ def check_people(filename):
     save_to_csv(without_name_variant, filename, "without_name_variant")
 
     click.echo("Number of people with duplicate identifiers: {}".format(len(with_duplicate_identifiers)))
-    save_to_csv(with_duplicate_identifiers, filename, "with_duplicate_identifiers")
+    save_to_csv(with_duplicate_identifiers, filename, "with_duplicate_identifiers", withidentifiers=True)
 
 
-def save_to_csv(listofpeople, filename, name):
+def save_to_csv(listofpeople, filename, name, withidentifiers=False):
 
     csv_filename = "{}_{}.csv".format(os.path.splitext(filename.name)[0], name)
     with open(csv_filename, 'wb') as csvfile:
         csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(['familyname', 'givenname', 'link'])
-        for person in listofpeople:
-            csvwriter.writerow([person.familyname.encode('utf-8'), person.givenname.encode('utf-8'), person.link.encode('utf-8')])
+
+        if withidentifiers:
+            csvwriter.writerow(['familyname', 'givenname', 'link', 'identifiers'])
+            for person in listofpeople:
+                csvwriter.writerow([person.familyname.encode('utf-8'), person.givenname.encode('utf-8'), person.link.encode('utf-8'), person.identifiers.encode('utf-8')])
+        else:
+            csvwriter.writerow(['familyname', 'givenname', 'link'])
+            for person in listofpeople:
+                csvwriter.writerow([person.familyname.encode('utf-8'), person.givenname.encode('utf-8'), person.link.encode('utf-8')])
     click.echo("Saved to {}".format(csv_filename))
 
 if __name__ == '__main__':
