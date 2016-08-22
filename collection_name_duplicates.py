@@ -21,7 +21,7 @@ def check_names(filename):
 
     for line in filename:
         json_collection = json.loads(line)
-	collection = Collection(json_collection["name"], "https://carleton.artudis.com/ppl/{}/".format(json_collection["__id__"])) 
+	collection = Collection(json_collection["name"], "https://carleton.artudis.com/col/{}/".format(json_collection["__id__"])) 
         collections.append(collection)  
 
     csv_filename = "{}_{}.csv".format(os.path.splitext(filename.name)[0], 'potential_duplicates')
